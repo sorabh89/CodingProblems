@@ -1,80 +1,59 @@
 package learn.string;
 
 public class LongestSubStringPalindrome_ManacherAlgorithm {
-    private int[]  p;  // p[i] = length of longest palindromic substring of t, centered at i
-    private String s;  // original string
-    private char[] t;  // transformed string
 
-    public LongestSubStringPalindrome_ManacherAlgorithm(String s) {
-        this.s = s;
-        preprocess();
-        p = new int[t.length];
-
-        int center = 0, right = 0;
-        for (int i = 1; i < t.length-1; i++) {
-            int mirror = 2*center - i;
-
-            if (right > i)
-                p[i] = Math.min(right - i, p[mirror]);
-
-            // attempt to expand palindrome centered at i
-            while (t[i + (1 + p[i])] == t[i - (1 + p[i])])
-                p[i]++;
-
-            // if palindrome centered at i expands past right,
-            // adjust center based on expanded palindrome.
-            if (i + p[i] > right) {
-                center = i;
-                right = i + p[i];
-            }
-        }
-
-    }
-
-    // Transform s into t.
-    // For example, if s = "abba", then t = "$#a#b#b#a#@"
-    // the # are interleaved to avoid even/odd-length palindromes uniformly
-    // $ and @ are prepended and appended to each end to avoid bounds checking
-    private void preprocess() {
-        t = new char[s.length()*2 + 3];
-        t[0] = '$';
-        t[s.length()*2 + 2] = '@';
-        for (int i = 0; i < s.length(); i++) {
-            t[2*i + 1] = '#';
-            t[2*i + 2] = s.charAt(i);
-        }
-        t[s.length()*2 + 1] = '#';
-    }
-
-    // longest palindromic substring
-    public String longestPalindromicSubstring() {
-        int length = 0;   // length of longest palindromic substring
-        int center = 0;   // center of longest palindromic substring
-        for (int i = 1; i < p.length-1; i++) {
-            if (p[i] > length) {
-                length = p[i];
-                center = i;
-            }
-        }
-        return s.substring((center - 1 - length) / 2, (center - 1 + length) / 2);
-    }
-
-    // longest palindromic substring centered at index i/2
-    public String longestPalindromicSubstring(int i) {
-        int length = p[i + 2];
-        int center = i + 2;
-        return s.substring((center - 1 - length) / 2, (center - 1 + length) / 2);
-    }
-
-
-
-    // test client
     public static void main(String[] args) {
-        String s = "abaccabadef";
-        LongestSubStringPalindrome_ManacherAlgorithm manacher = new LongestSubStringPalindrome_ManacherAlgorithm(s);
-        System.out.println(manacher.longestPalindromicSubstring());
-        for (int i = 0; i < 2*s.length(); i++)
-            System.out.println(i +  ": " + manacher.longestPalindromicSubstring(i));
+        String str = "abaczcabadef";
+        System.out.println(longestPalindromicSubstring(str));
+    }
 
+    public static String longestPalindromicSubstring(String str) {
+        if (str == null || str.length() < 2) {
+            return str;
+        }
+
+        // arr represents input string in a way that will act the same for strings of even and uneven length
+        // i.e. '#' is placed between each letter from input
+        char[] arr = new char[2 * str.length() + 1];
+        for (int i = str.length() - 1; i >= 0; i--) {
+            arr[2 * i + 1] = str.charAt(i);
+            arr[2 * i] = '#';
+        }
+        arr[2 * str.length()] = '#';
+
+        // LPS[i] - palindrome span(radius) with center at arr[i]
+        int[] longestPalindromeArr = new int[arr.length];
+        int p = 0;
+        for (int i = 1; i <= arr.length-1; i++) {
+            longestPalindromeArr[i] = 0;
+            if (longestPalindromeArr[p] + p >= i) {
+                longestPalindromeArr[i] = Math.min(longestPalindromeArr[2 * p - i], p + longestPalindromeArr[p] - i);
+            }
+            while (i + longestPalindromeArr[i] + 1 <= arr.length-1 && i - longestPalindromeArr[i] - 1 >= 0
+                    && arr[i + longestPalindromeArr[i] + 1] == arr[i - longestPalindromeArr[i] - 1]) {
+                longestPalindromeArr[i]++;
+            }
+            if (p + longestPalindromeArr[p] < i + longestPalindromeArr[i]) {
+                p = i;
+            }
+        }
+
+        // find the palindrome with the biggest span
+        int valueMax = 0;
+        int indexMax = 0;
+        for (int i = 0; i < arr.length-1; i++) {
+            if (valueMax < longestPalindromeArr[i]) {
+                valueMax = longestPalindromeArr[i];
+                indexMax = i;
+            }
+        }
+
+        // reconstruct the palindrome given its index in LPS and span
+        final int palindromeSpan = valueMax / 2;
+        if (indexMax % 2 == 0) {
+            return str.substring(indexMax/2  - palindromeSpan, indexMax/2 + palindromeSpan);
+        } else {
+            return str.substring(indexMax/2  - palindromeSpan, indexMax/2 + palindromeSpan + 1);
+        }
     }
 }
